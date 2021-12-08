@@ -1,38 +1,25 @@
-# create-svelte
+# `fetch` with `Headers` object issue
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/master/packages/create-svelte);
+## To reproduce
 
-## Creating a project
+```
+# Start an HTTP Bin at port 3001
+docker run -p 3001:80 kennethreitz/httpbin
 
-If you're seeing this, you've probably already done this step. Congrats!
+# Install dependencies
+pnpm i
 
-```bash
-# create a new project in the current directory
-npm init svelte@next
+# Start the application
+pnpm dev
 
-# create a new project in my-app
-npm init svelte@next my-app
+# Open http://localhost:3000/header-will-be-sent
+# Open http://localhost:3000/header-wont-be-sent
 ```
 
-> Note: the `@next` is temporary
+## What's wrong
 
-## Developing
+When headers are passed to `fetch` as a `Headers` object and [certain conditions are met](https://github.com/sveltejs/kit/blob/f12bbcc686829243f111db1b463d4a261fb67c23/packages/kit/src/runtime/server/page/load_node.js#L206), they are lost and instead _replaced_ with a `Cookie` header.
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+This happens because the `Headers` object does not support the spread operator.
 
-```bash
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-Before creating a production version of your app, install an [adapter](https://kit.svelte.dev/docs#adapters) for your target environment. Then:
-
-```bash
-npm run build
-```
-
-> You can preview the built app with `npm run preview`, regardless of whether you installed an adapter. This should _not_ be used to serve your app in production.
+Another issue is how external requests are detected. The conditional statement takes only the hostnames into consideration, disregarding the ports, which may make the hosts different even if the hostnames match exactly.
